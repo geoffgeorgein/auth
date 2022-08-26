@@ -23,14 +23,16 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
 
-app.use(passport.initialize());
-app.use(passport.session());
+
 
 app.use(session({
     secret:"Our Secret",
     resave:false,
     saveUninitialized:false
 }));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
  mongoose.connect('mongodb://localhost:27017/Secretsdb');
 
@@ -68,6 +70,31 @@ app.get('/login',(req,res)=>{
 app.get('/register',(req,res)=>{
 
     res.render("register.ejs");
+});
+
+app.get('/secrets',(req,res)=>{
+
+    if(req.isAuthenticated()){
+        res.render('secrets.ejs');
+    }
+    else{
+        res.redirect('/login');
+    }
+});
+
+app.get('/logout',(req,res)=>{
+
+    req.logout((err)=>{
+
+        if(err){
+            console.log(err);
+        }
+        else{
+            res.redirect('/');
+        }
+
+    });
+    
 })
 
 app.post('/register',(req,res)=>{
@@ -75,21 +102,22 @@ app.post('/register',(req,res)=>{
     const username=req.body.username;
     const pass=(req.body.password);
 
-    bcrypt.hash(pass, saltRounds, function(err, hash) {
-        // Store hash in your password DB.
+    User.register({username:username},pass,(err,user)=>{
 
-        const user1=new User({
-            name:username,
-            password:hash
-        })
-    
-        user1.save((err)=>{
-    
-            if(!err){
-                res.render('secrets.ejs');
-            }
-        })
-    });
+        if(err){
+
+            console.log(err);
+            res.redirect('/register');
+        }
+        else{
+            passport.authenticate("local")(req,res,()=>{
+
+                res.redirect('/secrets');
+            })
+        }
+
+    })
+
 
    
 })
@@ -99,28 +127,21 @@ app.post('/login',(req,res)=>{
     const username=req.body.username;
     const pass=(req.body.password);
 
-    User.findOne({name:username},(err,fuser)=>{
+    const user=new User({
+        username:username,
+        password:pass
+    });
+
+    req.login(user,(err)=>{
 
         if(err){
             console.log(err);
         }
         else{
+            passport.authenticate("local")(req,res,()=>{
 
-            bcrypt.compare(pass, fuser.password, function(err, result) {
-                // result == true
-                if(result){
-
-                    console.log("logged in successfully");
-                    res.render("secrets.ejs");
-                    
-                }
-                else{
-                    console.log('Wrong password');
-                }
+                res.redirect('/secrets');
             });
-
-           
-            
         }
     })
 })
