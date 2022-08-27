@@ -43,7 +43,8 @@ app.use(passport.session());
  const userSchema=new mongoose.Schema({
     name:String,
     password:String,
-    googleId:String
+    googleId:String,
+    secret:String
  });
  userSchema.plugin(passportLocalMongoose);
 
@@ -100,13 +101,29 @@ app.get('/register',(req,res)=>{
 
 app.get('/secrets',(req,res)=>{
 
+    User.find({secret:{$ne:null}},(err,flist)=>{
+
+        if(err){
+            console.log(err);
+        }
+        else{
+            res.render("secrets.ejs",{flist:flist});
+        }
+    })
+});
+
+app.get('/submit',(req,res)=>{
+
     if(req.isAuthenticated()){
-        res.render('secrets.ejs');
+        res.render('submit.ejs');
     }
     else{
         res.redirect('/login');
     }
-});
+
+})
+
+
 
 app.get('/logout',(req,res)=>{
 
@@ -132,6 +149,32 @@ app.get('/auth/google/secrets',
     // Successful authentication, redirect home.
     res.redirect('/secrets');
   });
+
+  app.post('/submit',(req,res)=>{
+
+    const secrt=req.body.secret;
+    // console.log(secrt);
+    // console.log(req.user._id);
+
+    User.findById(req.user._id,(err,fuser)=>{
+
+        if(err){
+            console.log(err);
+
+        }
+        else{
+            if(fuser){
+
+                fuser.secret=secrt;
+                console.log("fuser found");
+
+                fuser.save(()=>{
+                    res.redirect('/secrets');
+                });
+            }
+        }
+    })
+  })
 
 app.post('/register',(req,res)=>{
 
