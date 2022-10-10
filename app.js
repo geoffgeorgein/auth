@@ -37,7 +37,7 @@ app.use(passport.session());
 
  mongoose.connect('mongodb://localhost:27017/Secretsdb');
 
- 
+//  
 
 
  const userSchema=new mongoose.Schema({
@@ -111,7 +111,7 @@ app.get('/secrets',(req,res)=>{
         }
     })
 });
-
+// 
 app.get('/submit',(req,res)=>{
 
     if(req.isAuthenticated()){
